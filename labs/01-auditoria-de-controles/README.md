@@ -70,13 +70,13 @@ sha256sum saida/evidencias_auditoria.txt | tee saida/evidencias_auditoria.sha256
 
 | Critério | Evidência (comando + resultado) | Conforme? | NC |
 |---|---|---|---|
-| C1 | | | |
-| C2 | | | |
-| C3 | | | |
-| C4 | | | |
+| C1 | `awk -F: '$3 == 0 {print $1, "-> UID", $3}' ...` → `root -> UID 0`; `suporte -> UID 0` | Não | NC-01: conta `suporte` também tem UID 0 |
+| C2 | `awk -F: '$2 == "" {print "SEM SENHA:", $1}' ...` → `SEM SENHA: suporte` | Não | NC-02: senha vazia na conta `suporte` |
+| C3 | `find ... -type f -perm -o+w` → `saida/servidor/financeiro/pagamentos.csv`; `ls -l` mostrou `-rwxrwxrwx` | Não | NC-03: escrita permitida a outros em `pagamentos.csv` |
+| C4 | `grep -i "desligad" ...` → `estagiario2024` (desligado em 2024) | Não | NC-04: conta de ex-funcionário ainda existe |
 
 ## ❓ Perguntas
-1. Qual conta viola dois critérios ao mesmo tempo? Qual o risco?
-2. Escreva a **NC-01** de forma clara, firme e objetiva (fato, critério e efeito).
-3. Por que a auditoria foi feita numa **cópia** das configurações, e não no servidor em produção?
-4. Qual recomendação você faria para cada não conformidade?
+1. A conta `suporte` viola C1 e C2: tem UID 0, como `root`, e está sem senha. Isso permite que alguém que obtenha acesso à conta alcance privilégios máximos sem autenticação adequada, comprometendo os dados e o servidor financeiro.
+2. **NC-01 — Fato:** a conta `suporte` está configurada com UID 0. **Critério:** pela política C1, somente `root` pode ter UID 0. **Efeito:** a conta de suporte também recebe privilégio máximo, ampliando o risco de acesso e alterações não autorizadas no servidor.
+3. A análise foi feita numa cópia para não alterar configurações nem interromper o servidor em produção. A cópia mantém a atividade controlada e permite repetir os testes sem comprometer a operação ou a integridade das evidências originais.
+4. **NC-01:** remover o UID 0 de `suporte` e conceder apenas os privilégios necessários. **NC-02:** definir uma senha forte e individual ou desabilitar a conta até regularizá-la. **NC-03:** retirar a permissão de escrita para "outros" em `pagamentos.csv` e revisar proprietário, grupo e permissões dos arquivos financeiros. **NC-04:** desabilitar e remover a conta `estagiario2024`, revogando seus acessos conforme o processo de desligamento.
